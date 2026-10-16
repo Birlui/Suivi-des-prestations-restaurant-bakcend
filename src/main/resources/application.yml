@@ -1,0 +1,60 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: restauration-marches
+
+  # ---------------------------------------------------------------
+  # Profil par défaut : base H2 en mémoire, pratique pour démarrer
+  # immédiatement et tester l'API sans installer de base de données.
+  # Pour la production, activer le profil "postgres" (voir plus bas
+  # et le README) qui pointe vers une vraie base PostgreSQL.
+  # ---------------------------------------------------------------
+  datasource:
+    url: jdbc:h2:mem:marches_restauration;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+logging:
+  level:
+    com.marches.restauration: INFO
+
+---
+# ------------------------------------------------------------------
+# Profil "postgres" : à activer en production avec
+#   -Dspring.profiles.active=postgres
+# et les variables d'environnement DB_URL / DB_USER / DB_PASSWORD.
+# ------------------------------------------------------------------
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: jdbc:postgresql://localhost:5432/marches_restauration
+    username: postgres
+    password: 12345678
+    driver-class-name: org.postgresql.Driver
+#    url: ${DB_URL:jdbc:postgresql://localhost:5432/marches_restauration}
+#    username: ${DB_USER:postgres}
+#    password: ${DB_PASSWORD:12345678}
+#    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
