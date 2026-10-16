@@ -37,6 +37,9 @@ services:
         fromDatabase:
           name: marches-restauration-db
           property: password
+      # Pas de données de démonstration en production
+      - key: APP_DEMO_DATA
+        value: "false"
       # URL du front-end déployé (plusieurs valeurs séparées par des virgules)
       - key: CORS_ALLOWED_ORIGINS
         sync: false

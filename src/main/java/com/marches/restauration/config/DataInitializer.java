@@ -3,8 +3,10 @@ package com.marches.restauration.config;
 import com.marches.restauration.domain.*;
 import com.marches.restauration.domain.enums.*;
 import com.marches.restauration.repository.*;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -34,10 +36,26 @@ public class DataInitializer implements CommandLineRunner {
     private final ReglementRepository reglementRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EntityManager entityManager;
+
+    /** APP_RESET_DATA=true : vide toutes les données métier au démarrage (les utilisateurs sont conservés). */
+    @Value("${app.reset-data:false}")
+    private boolean resetData;
+
+    /** APP_DEMO_DATA=false : ne jamais insérer les données de démonstration. */
+    @Value("${app.demo-data:true}")
+    private boolean demoData;
 
     @Override
     @Transactional
     public void run(String... args) {
+        if (resetData) {
+            viderDonneesMetier();
+        }
+        if (!demoData) {
+            log.info("Données de démonstration désactivées (app.demo-data=false).");
+            return;
+        }
         if (marcheRepository.count() > 0) {
             log.info("Données déjà présentes — initialisation ignorée.");
             return;
@@ -149,6 +167,22 @@ public class DataInitializer implements CommandLineRunner {
         reglementRepository.save(r2);
 
         log.info("Données de démonstration initialisées : 2 marchés, 2 ordres, 3 commandes journalières, 2 règlements.");
+    }
+
+    /**
+     * Supprime toutes les données métier, dans l'ordre des clés étrangères.
+     * La table des utilisateurs n'est pas touchée.
+     */
+    private void viderDonneesMetier() {
+        String[] entites = {
+                "LigneCommande", "CommandeJournaliere", "LigneOrdre", "Reglement",
+                "OrdreCommande", "Prestation", "Marche", "JournalOperation"
+        };
+        for (String entite : entites) {
+            int supprimes = entityManager.createQuery("delete from " + entite).executeUpdate();
+            log.warn("Réinitialisation : {} ligne(s) supprimée(s) dans {}.", supprimes, entite);
+        }
+        log.warn("Données métier vidées (utilisateurs conservés). Retirer APP_RESET_DATA de l'environnement.");
     }
 
     private void creerUtilisateursDeDemonstration() {
